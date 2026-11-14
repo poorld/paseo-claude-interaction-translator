@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { FinalResponses, type HistoryPage } from "../server/final-responses.ts";
 import { settingsSchema } from "../shared/settings.ts";
+import { resolveResponseMessageId } from "../shared/response-identity.ts";
 
 const turn = { agentId: "a", turnId: "t1", parentAgentId: null };
 const identity = { agentId: "a", messageId: "last", text: "Final answer" };
@@ -59,12 +60,14 @@ test("history uses exact turn identity, not text or latest message heuristics", 
   await coordinator.complete(turn, "completed", async () => page([{ type: "assistant_message", text: "Other", messageId: "other", turnId: "t2" }]));
   assert.equal(calls.length, 0);
 });
-test("an assistant message without stable identity does not translate an earlier row instead", async () => {
+test("the final summary without a provider messageId still translates instead of earlier tool chatter", async () => {
   const { coordinator, calls } = setup(); coordinator.start(turn);
   await coordinator.complete(turn, "completed", async () => page([
     { type: "assistant_message", messageId: "first", text: "Earlier" }, { type: "assistant_message", text: "No ID" },
   ]));
-  assert.equal(calls.length, 0);
+  assert.deepEqual(calls, ["No ID"]);
+  assert.deepEqual(coordinator.get({ agentId: "a", messageId: resolveResponseMessageId(undefined, "No ID"), text: "No ID" }), { status: "ready", text: "最终答复" });
+  assert.equal(coordinator.get({ agentId: "a", messageId: "first", text: "Earlier" }).status, "original");
 });
 test("a new turn invalidates pending history fetch", async () => {
   const { coordinator, calls } = setup(); coordinator.start(turn);

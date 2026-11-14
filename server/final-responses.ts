@@ -1,6 +1,7 @@
 import type { Language, TranslationSettings } from "../shared/settings";
 import type { ResponseIdentity, ResponseState } from "../shared/contracts";
 import { MAX_TEXT_CHARS } from "../shared/contracts";
+import { resolveResponseMessageId } from "../shared/response-identity";
 import { randomUUID } from "node:crypto";
 export interface Cursor { epoch: string; seq: number }
 export interface HistoryPage {
@@ -55,8 +56,9 @@ export class FinalResponses {
         const last = [...page.entries].reverse().find(entry => entry.turnId === turn.turnId && entry.item.type === "assistant_message");
         if (last) {
           const { text, messageId } = last.item;
-          if (!text?.trim() || !messageId || messageId.length > 512 || text.length > MAX_TEXT_CHARS) return;
-          const entry = { agentId: turn.agentId, messageId, text, state: { status: "translating" } as ResponseState, abort: owner.abort, bytes: 0 };
+          if (!text?.trim() || text.length > MAX_TEXT_CHARS) return;
+          const resolvedId = resolveResponseMessageId(messageId, text);
+          const entry = { agentId: turn.agentId, messageId: resolvedId, text, state: { status: "translating" } as ResponseState, abort: owner.abort, bytes: 0 };
           if (this.put(entry)) await this.translate(entry, settings);
           return;
         }

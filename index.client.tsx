@@ -3,6 +3,7 @@ import { createTranslationScreen, Drafts } from "./client/translation-screen";
 import { SettingsScreen } from "./client/settings-screen";
 import { createResponseRenderer } from "./client/response";
 import { responseDisplaySchema } from "./shared/contracts";
+import { resolveResponseMessageId } from "./shared/response-identity";
 
 export default function contribute(client: PluginClientContext) {
   const drafts = new Drafts();
@@ -25,8 +26,9 @@ export default function contribute(client: PluginClientContext) {
     client.addTimelineTransformer({
       id: "translated-response", query: { itemType: "assistant_message" },
       transform({ item, phase }) {
-        if (!item.messageId || !item.text || item.text.length > 64000) return undefined;
-        return { items: [{ type: "plugin", kind: "translated-response", version: 1, data: { messageId: item.messageId, text: item.text, phase } }] };
+        if (!item.text || item.text.length > 64000) return undefined;
+        const messageId = resolveResponseMessageId(item.messageId, item.text);
+        return { items: [{ type: "plugin", kind: "translated-response", version: 1, data: { messageId, text: item.text, phase } }] };
       },
     }),
     client.addTimelineRenderer({ kind: "translated-response", version: 1, schema: responseDisplaySchema, Component: createResponseRenderer(scope) }),
