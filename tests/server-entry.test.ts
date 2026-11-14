@@ -4,7 +4,7 @@ import { createServer } from "node:http";
 import { once } from "node:events";
 import type { PluginServerContext } from "@getpaseo/plugin/server";
 import contribute from "../index.server.ts";
-import { responsesRpc, retryResponseRpc, translateDraftRpc } from "../shared/contracts.ts";
+import { responsesRpc, retryResponseRpc, translateDraftRpc, translateTextRpc } from "../shared/contracts.ts";
 import { settingsSchema } from "../shared/settings.ts";
 
 type Handler = (input: any, context: any) => any;
@@ -44,9 +44,15 @@ test("real server entry translates a draft and only the final reply without send
   const result = await handlers.get(responsesRpc.name)!({ agentId: "agent" }, {});
   assert.deepEqual(result.entries.map((entry: any) => [entry.messageId, entry.text, entry.state]), [["final", "Final reply", { status: "ready", text: "最终答复" }]]);
   assert.equal((await handlers.get(retryResponseRpc.name)!({ agentId: "agent", messageId: "arbitrary", text: "not admitted" }, {})).accepted, false);
+  const manual = await handlers.get(translateTextRpc.name)!({ text: "Old English message", target: "zh-CN" }, {});
+  assert.equal(manual.text, "最终答复");
+  assert.equal(requests.length, 3);
+  assert.equal(requests[2].messages[1].content, "Old English message");
+  assert.match(requests[2].messages[0].content, /Simplified Chinese/);
   // The fake context deliberately offers no send(), timeline.append() or history mutation.
   config = { ...config, enabled: false }; settingsChanged?.();
   await assert.rejects(() => handlers.get(translateDraftRpc.name)!({ text: "你好" }, {}), /停用/);
+  await assert.rejects(() => handlers.get(translateTextRpc.name)!({ text: "Hello", target: "zh-CN" }, {}), /停用/);
   assert.equal((await handlers.get(responsesRpc.name)!({ agentId: "agent" }, {})).entries.length, 0);
   cleanup(); assert.equal(hooks.size, 0);
 });

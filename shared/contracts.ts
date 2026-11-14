@@ -20,6 +20,15 @@ export const translateDraftRpc = defineRpc({
   input: z.object({ text: z.string().min(1).max(MAX_TEXT_CHARS) }),
   output: z.object({ text: z.string().max(MAX_TEXT_CHARS) }),
 });
+/** On-demand display-only translation of any current or historical message. */
+export const translateTextRpc = defineRpc({
+  name: "translation.text",
+  input: z.object({
+    text: z.string().min(1).max(MAX_TEXT_CHARS),
+    target: z.enum(["en", "zh-CN"]),
+  }),
+  output: z.object({ text: z.string().max(MAX_TEXT_CHARS) }),
+});
 export const responsesRpc = defineRpc({
   name: "translation.responses",
   input: z.object({ agentId: z.string().min(1).max(256), revision: z.string().max(100).optional() }),
