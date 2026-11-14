@@ -15,7 +15,7 @@ Response translations change only the displayed text. The agent's original repli
 
 ## Setup and limitations
 
-Use Paseo `>=0.14.0 <0.16.0`. With the default backend, install and sign in to Codex on the daemon host and set an executable path if it is not on the daemon's `PATH`. For API translation, configure the full chat-completions URL, model ID and key environment variable. Settings let you choose the translation backend, input and output languages, and whether final replies are translated automatically.
+Use Paseo `>=0.14.0 <0.17.0` (including the 0.16.0-beta.2 prerelease). With the default backend, install and sign in to Codex on the daemon host and set an executable path if it is not on the daemon's `PATH`. For API translation, configure the full chat-completions URL, model ID and key environment variable. Settings let you choose the translation backend, input and output languages, and whether final replies are translated automatically.
 
 Daemon-side operation has been verified on macOS with Paseo 0.14.0 and 0.15.4; Windows process cleanup is not fully verified. Each normally completed turn can trigger its own final-reply translation, so queued follow-ups are not guaranteed to produce only one translation. Translations and panel drafts are held in bounded memory caches and can disappear after eviction or plugin reload.
 
